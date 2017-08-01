@@ -1228,3 +1228,40 @@ exports['Should correctly handle bulk operation split for unordered bulk operati
     });
   }
 }
+
+exports['Should return an error instead of throwing when an empty bulk operation is submitted'] = {
+  metadata: { requires: { mongodb: ">=2.6.0" , topology: 'single', node: ">0.10.0" } },
+  test: function(configure, test) {
+    var db = configure.newDbInstance({ w: 1 }, { poolSize: 1 });
+
+    db.open(function(err, db) {
+      db.collection('doesnt_matter').insertMany([], function(err, r) {
+        test.equal(err instanceof Error, true);
+        test.equal(err.message, 'Invalid Operation, no operations specified');
+        db.close();
+        test.done();
+      });
+    });
+  }
+}
+
+// exports['Should return an error instead of throwing when an empty bulk operation is submitted (with promise)'] = {
+//   metadata: { requires: { mongodb: ">=2.6.0" , topology: 'single', node: ">0.10.0" } },
+//   test: function(configure, test) {
+//     var db = configure.newDbInstance({ w: 1 }, { poolSize: 1 });
+
+//     db.open()
+//       .then(function() { return db.collection('doesnt_matter').insertMany([]); })
+//       .then(function() {
+//         test.equal(false, true); // this should not happen!
+//       })
+//       .catch(function(err) {
+//         test.equal(err instanceof Error, true);
+//         test.equal(err.message, 'Invalid Operation, no operations specified');
+//       })
+//       .then(function() {
+//         db.close();
+//         test.done();
+//       });
+//   }
+// }
