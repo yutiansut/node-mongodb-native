@@ -302,7 +302,8 @@ describe('APM', function() {
       // Do we have a getMore command or killCursor command
       if (commandName == 'getMore') {
         expect(result.command.getMore.isZero()).to.be.false;
-      } else if (commandName == 'killCursors') {  // eslint-disable-line
+      } else if (commandName == 'killCursors') {
+        // eslint-disable-line
       } else {
         expect(command).to.eql(result.command);
       }
@@ -651,7 +652,7 @@ describe('APM', function() {
                   // Success messages
                   expect(succeeded[0].reply).to.not.be.null;
                   expect(succeeded[0].operationId).to.equal(succeeded[1].operationId);
-                  expect(succeeded[0].operationId).to.equal(succeeded[2].operationId)
+                  expect(succeeded[0].operationId).to.equal(succeeded[2].operationId);
                   expect(succeeded[1].reply).to.not.be.null;
                   expect(succeeded[2].reply).to.not.be.null;
 
@@ -1135,11 +1136,11 @@ describe('APM', function() {
     }
   });
 
-  it('should correcly decorate the apm result for aggregation with cursorId', {
+  it.only('should correcly decorate the apm result for aggregation with cursorId', {
     metadata: { requires: { topology: ['single', 'replicaset'], mongodb: '>=3.0.0' } },
 
     // The actual test we wish to run
-    test: function(done) {
+    test: function() {
       var self = this;
       var started = [];
       var succeeded = [];
@@ -1157,42 +1158,48 @@ describe('APM', function() {
           succeeded.push(event);
       });
 
+      // Generate docs
+      var docs = [];
+      for (var i = 0; i < 2500; i++) {
+        docs.push({ a: i });
+      }
+
+      var db;
       var client = self.configuration.newClient({ w: 1 }, { poolSize: 1, auto_reconnect: false });
-      client.connect(function(err, client) {
-        var db = client.db(self.configuration.db);
-        expect(err).to.be.null;
+      return client
+        .connect()
+        .then(function() {
+          db = client.db(self.configuration.db);
+          return db.collection('apm_test_u_4').drop().catch(function() {});
+        })
+        .then(function() {
+          console.log('dropped');
+          return db.collection('apm_test_u_4').insertMany(docs);
+        })
+        .then(function(r) {
+          console.log('inserted');
+          expect(r).to.exist;
+          return db.collection('apm_test_u_4').aggregate([{ $match: {} }]).toArray();
+        })
+        .then(function(r) {
+          console.log('aggregate toArray completed');
 
-        // Generate docs
-        var docs = [];
-        for (var i = 0; i < 2500; i++) {
-          docs.push({ a: i });
-        }
+          expect(r).to.exist;
+          expect(started).to.have.length(3);
+          expect(succeeded).to.have.length(3);
 
-        db.collection('apm_test_u_4').drop().then(function() {
-          db.collection('apm_test_u_4').insertMany(docs).then(function(r) {
-            expect(r).to.exist;
-
-            db.collection('apm_test_u_4').aggregate([{ $match: {} }]).toArray().then(function(r) {
-              expect(r).to.exist;
-              expect(started).to.have.length(3);
-              expect(succeeded).to.have.length(3);
-
-              var cursors = succeeded.map(function(x) {
-                return x.reply.cursor;
-              });
-
-              // Check we have a cursor
-              expect(cursors[0].id).to.exist;
-              expect(cursors[0].id.toString()).to.equal(cursors[1].id.toString());
-              expect(cursors[2].id.toString()).to.equal('0');
-
-              listener.uninstrument();
-              client.close();
-              done();
-            });
+          var cursors = succeeded.map(function(x) {
+            return x.reply.cursor;
           });
+
+          // Check we have a cursor
+          expect(cursors[0].id).to.exist;
+          expect(cursors[0].id.toString()).to.equal(cursors[1].id.toString());
+          expect(cursors[2].id.toString()).to.equal('0');
+
+          listener.uninstrument();
+          client.close();
         });
-      });
     }
   });
 
