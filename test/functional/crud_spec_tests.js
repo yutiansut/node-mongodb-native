@@ -1,8 +1,8 @@
 var fs = require('fs');
 var path = require('path');
 var semver = require('semver');
-var test = require('./shared').assert;
 var assign = require('../../lib/utils').assign;
+var expect = require('chai').expect;
 
 function findScenarios(type) {
   return fs
@@ -110,18 +110,18 @@ describe('CRUD spec', function() {
     return collection
       .aggregate(pipeline, options)
       .toArray()
-      .then(function(results) {
+      .then(function(result) {
         if (scenarioTest.outcome.collection) {
           return db
             .collection(scenarioTest.outcome.collection.name)
             .find({})
             .toArray()
-            .then(function(collectionResults) {
-              test.deepEqual(scenarioTest.outcome.result, collectionResults);
+            .then(function(collectionResult) {
+              expect(collectionResult).to.eql(scenarioTest.outcome.result);
             });
         }
 
-        test.deepEqual(scenarioTest.outcome.result, results);
+        expect(result).to.eql(scenarioTest.outcome.result);
         return Promise.resolve();
       });
   }
@@ -133,7 +133,7 @@ describe('CRUD spec', function() {
     delete options.filter;
 
     return collection.count(filter, options).then(function(result) {
-      test.equal(scenarioTest.outcome.result, result);
+      expect(result).to.eql(scenarioTest.outcome.result);
     });
   }
 
@@ -146,7 +146,7 @@ describe('CRUD spec', function() {
     delete options.filter;
 
     return collection.distinct(fieldName, filter, options).then(function(result) {
-      test.deepEqual(scenarioTest.outcome.result, result);
+      expect(result).to.eql(scenarioTest.outcome.result);
     });
   }
 
@@ -159,8 +159,8 @@ describe('CRUD spec', function() {
     return collection
       .find(filter, options)
       .toArray()
-      .then(function(results) {
-        test.deepEqual(scenarioTest.outcome.result, results);
+      .then(function(result) {
+        expect(result).to.eql(scenarioTest.outcome.result);
       });
   }
 
@@ -173,15 +173,15 @@ describe('CRUD spec', function() {
 
     return collection[scenarioTest.operation.name](filter, options).then(function(result) {
       Object.keys(scenarioTest.outcome.result).forEach(function(resultName) {
-        test.equal(scenarioTest.outcome.result[resultName], result[resultName]);
+        expect(result[resultName]).to.equal(scenarioTest.outcome.result[resultName]);
       });
 
       if (scenarioTest.outcome.collection) {
         return collection
           .find({})
           .toArray()
-          .then(function(results) {
-            test.deepEqual(scenarioTest.outcome.collection.data, results);
+          .then(function(result) {
+            expect(result).to.eql(scenarioTest.outcome.collection.data);
           });
       }
     });
@@ -200,9 +200,9 @@ describe('CRUD spec', function() {
     return collection[opName](filter, replacement, options).then(function(result) {
       Object.keys(scenarioTest.outcome.result).forEach(function(resultName) {
         if (resultName === 'upsertedId') {
-          test.equal(scenarioTest.outcome.result[resultName], result[resultName]._id);
+          expect(result[resultName]._id).to.equal(scenarioTest.outcome.result[resultName]);
         } else {
-          test.equal(scenarioTest.outcome.result[resultName], result[resultName]);
+          expect(result[resultName]).to.equal(scenarioTest.outcome.result[resultName]);
         }
       });
 
@@ -210,8 +210,8 @@ describe('CRUD spec', function() {
         return collection
           .find({})
           .toArray()
-          .then(function(results) {
-            test.deepEqual(scenarioTest.outcome.collection.data, results);
+          .then(function(result) {
+            expect(result).to.eql(scenarioTest.outcome.collection.data);
           });
       }
     });
@@ -228,9 +228,9 @@ describe('CRUD spec', function() {
     return collection[scenarioTest.operation.name](filter, update, options).then(function(result) {
       Object.keys(scenarioTest.outcome.result).forEach(function(resultName) {
         if (resultName === 'upsertedId') {
-          test.equal(scenarioTest.outcome.result[resultName], result[resultName]._id);
+          expect(result[resultName]._id).to.equal(scenarioTest.outcome.result[resultName]);
         } else {
-          test.equal(scenarioTest.outcome.result[resultName], result[resultName]);
+          expect(result[resultName]).to.equal(scenarioTest.outcome.result[resultName]);
         }
       });
 
@@ -238,8 +238,8 @@ describe('CRUD spec', function() {
         return collection
           .find({})
           .toArray()
-          .then(function(results) {
-            test.deepEqual(scenarioTest.outcome.collection.data, results);
+          .then(function(result) {
+            expect(result).to.eql(scenarioTest.outcome.collection.data);
           });
       }
     });
@@ -267,15 +267,15 @@ describe('CRUD spec', function() {
 
     return findPromise.then(function(result) {
       if (scenarioTest.outcome.result) {
-        test.deepEqual(scenarioTest.outcome.result, result.value);
+        expect(result.value).to.eql(scenarioTest.outcome.result);
       }
 
       if (scenarioTest.outcome.collection) {
         return collection
           .find({})
           .toArray()
-          .then(function(results) {
-            test.deepEqual(scenarioTest.outcome.collection.data, results);
+          .then(function(result) {
+            expect(result).to.eql(scenarioTest.outcome.collection.data);
           });
       }
     });
